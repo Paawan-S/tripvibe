@@ -6,6 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     ai_provider: str = "groq"
     groq_api_key: str = ""
+    groq_model: str = "openai/gpt-oss-120b"
     unsplash_access_key: str = ""
     supabase_url: str = ""
     supabase_anon_key: str = ""
