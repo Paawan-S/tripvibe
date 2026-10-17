@@ -106,3 +106,15 @@ $$;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function handle_new_user();
+
+  -- Epic 3: extra fields for the preference form
+alter table trips rename column vibe to travel_style;
+alter table trips rename column travelers to group_size;
+alter table trips drop column budget;
+alter table trips add column budget_per_day numeric;
+alter table trips add column pace text default 'moderate';
+alter table trips add column dietary_restrictions text[];
+alter table trips add column mobility_concerns text;
+
+-- Epic 4: store the user's feedback when they regenerate
+alter table itineraries add column feedback text;
