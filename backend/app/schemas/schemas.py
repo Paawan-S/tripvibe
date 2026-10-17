@@ -81,6 +81,9 @@ class DayItinerary(BaseModel):
     theme: str
     activities: List[Activity]
     estimated_day_cost: float = 0
+    image_url: Optional[str] = None
+    image_credit: Optional[str] = None
+    image_credit_url: Optional[str] = None
 
 
 class ItineraryResponse(BaseModel):
@@ -90,6 +93,11 @@ class ItineraryResponse(BaseModel):
     summary: Optional[str] = None
     days: List[DayItinerary]
     created_at: Optional[datetime] = None
+
+
+class TripDetailResponse(BaseModel):
+    trip: TripResponse
+    itinerary: Optional[ItineraryResponse] = None
 
 
 class DestinationSuggestion(BaseModel):
