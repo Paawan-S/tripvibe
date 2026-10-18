@@ -5,7 +5,10 @@ export default function Sidebar() {
   return (
     <aside className="sidebar">
       <div className="brand">
-        <Compass size={22} /> TripVibe
+        <span className="brand-mark">
+          <Compass size={20} />
+        </span>
+        TripVibe
       </div>
       <nav>
         <NavLink to="/dashboard" className="nav-link">

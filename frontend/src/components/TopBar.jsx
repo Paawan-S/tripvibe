@@ -11,14 +11,21 @@ export default function TopBar() {
     navigate('/login')
   }
 
-  const name = user?.user_metadata?.name || user?.email
+  const name = user?.user_metadata?.name || user?.email || ''
+  const initial = name.trim().charAt(0).toUpperCase() || '?'
 
   return (
     <header className="topbar">
-      <span className="topbar-user">Hi, {name}</span>
-      <button className="btn btn-ghost" onClick={handleLogout}>
-        <LogOut size={16} /> Log out
-      </button>
+      <div className="topbar-greet">
+        <span className="topbar-hello">Welcome back</span>
+        <strong className="topbar-user">{name}</strong>
+      </div>
+      <div className="topbar-right">
+        <span className="avatar">{initial}</span>
+        <button className="btn btn-ghost" onClick={handleLogout}>
+          <LogOut size={16} /> Log out
+        </button>
+      </div>
     </header>
   )
 }

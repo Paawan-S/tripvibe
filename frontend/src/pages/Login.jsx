@@ -1,7 +1,14 @@
 import { useState } from 'react'
 import { Navigate } from 'react-router-dom'
-import { Compass } from 'lucide-react'
+import { Clock, Compass, Navigation, Sparkles, Wallet } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+
+const FEATURES = [
+  { icon: Sparkles, text: 'AI-powered planning' },
+  { icon: Navigation, text: 'Smart route grouping' },
+  { icon: Wallet, text: 'Costs in ₹ per day' },
+  { icon: Clock, text: 'Relaxed to fast pace' },
+]
 
 export default function Login() {
   const { session, signIn, signUp } = useAuth()
@@ -45,66 +52,122 @@ export default function Login() {
 
   return (
     <div className="auth-page">
-      <form className="auth-card" onSubmit={handleSubmit}>
+      <section className="auth-brand">
         <div className="brand">
-          <Compass size={26} /> TripVibe
+          <span className="brand-mark">
+            <Compass size={20} />
+          </span>
+          TripVibe
         </div>
-        <p className="muted" style={{ textAlign: 'center', marginBottom: 20 }}>
-          {isLogin ? 'Welcome back. Log in to your trips.' : 'Create an account to start planning.'}
+
+        <span className="pill">
+          <Sparkles size={14} /> AI trip planner
+        </span>
+
+        <h1>
+          Plan your next <span className="hero-accent">adventure</span> in seconds.
+        </h1>
+        <p className="auth-lead">
+          Pick a vibe, set a budget and your dates. Get a day-by-day plan with places grouped by
+          area, travel times and costs in ₹.
         </p>
 
-        {error && <div className="error-box">{error}</div>}
-        {info && <div className="info-box">{info}</div>}
+        <ul className="auth-features">
+          {FEATURES.map(({ icon: Icon, text }) => (
+            <li key={text}>
+              <Icon size={18} /> {text}
+            </li>
+          ))}
+        </ul>
 
-        {!isLogin && (
-          <div className="field">
-            <label htmlFor="name">Name</label>
-            <input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
+        <div className="auth-sample" aria-hidden="true">
+          <div className="sample-head">
+            <span>Day 1</span>
+            <span className="sample-tag">Example</span>
           </div>
-        )}
-
-        <div className="field">
-          <label htmlFor="email">Email</label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
+          <div className="sample-row">
+            <strong>09:00</strong>
+            <span>Morning walk through the old town</span>
+          </div>
+          <div className="sample-row">
+            <strong>13:00</strong>
+            <span>Local lunch near the market</span>
+          </div>
+          <div className="sample-row">
+            <strong>17:30</strong>
+            <span>Sunset at a scenic viewpoint</span>
+          </div>
         </div>
+      </section>
 
-        <div className="field">
-          <label htmlFor="password">Password</label>
-          <input
-            id="password"
-            type="password"
-            minLength={6}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
+      <section className="auth-form-wrap">
+        <form className="auth-card" onSubmit={handleSubmit}>
+          <h2>{isLogin ? 'Welcome back' : 'Create your account'}</h2>
+          <p className="muted" style={{ marginBottom: 22 }}>
+            {isLogin ? 'Log in to see your trips.' : 'Sign up to start planning.'}
+          </p>
 
-        <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} disabled={busy}>
-          {busy ? 'Please wait…' : isLogin ? 'Log in' : 'Sign up'}
-        </button>
+          {error && <div className="error-box">{error}</div>}
+          {info && <div className="info-box">{info}</div>}
 
-        <p className="auth-switch muted">
-          {isLogin ? 'New here? ' : 'Already have an account? '}
-          <button
-            type="button"
-            className="link-button"
-            onClick={() => {
-              setMode(isLogin ? 'signup' : 'login')
-              setError('')
-              setInfo('')
-            }}
-          >
-            {isLogin ? 'Create an account' : 'Log in'}
+          {!isLogin && (
+            <div className="field">
+              <label htmlFor="name">Name</label>
+              <input
+                id="name"
+                autoComplete="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+            </div>
+          )}
+
+          <div className="field">
+            <label htmlFor="email">Email</label>
+            <input
+              id="email"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="field">
+            <label htmlFor="password">Password</label>
+            <input
+              id="password"
+              type="password"
+              minLength={6}
+              autoComplete={isLogin ? 'current-password' : 'new-password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+
+          <button className="btn btn-primary btn-block" disabled={busy}>
+            {busy ? 'Please wait…' : isLogin ? 'Log in' : 'Sign up'}
           </button>
-        </p>
-      </form>
+
+          <p className="auth-switch muted">
+            {isLogin ? 'New here? ' : 'Already have an account? '}
+            <button
+              type="button"
+              className="link-button"
+              onClick={() => {
+                setMode(isLogin ? 'signup' : 'login')
+                setError('')
+                setInfo('')
+              }}
+            >
+              {isLogin ? 'Create an account' : 'Log in'}
+            </button>
+          </p>
+        </form>
+      </section>
     </div>
   )
 }
