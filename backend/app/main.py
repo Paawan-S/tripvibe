@@ -14,9 +14,10 @@ settings = get_settings()
 
 app = FastAPI(title="TripVibe API", version="1.0.0")
 
-# CORS: which websites are allowed to call this API from a browser
+# CORS: which websites are allowed to call this API from a browser.
+# rstrip("/") protects us if FRONTEND_URL is pasted with a trailing slash.
 allowed_origins = list({
-    settings.frontend_url,
+    settings.frontend_url.rstrip("/"),
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 })
