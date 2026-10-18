@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
-  Calendar, Check, Clock, Copy, Loader, MapPin, Moon, Navigation,
-  Pencil, Printer, RefreshCw, Sun, Sunset, Trash2, Users,
+  Calendar, Check, Clock, Copy, Loader, MapPin, Moon, Navigation, Pencil,
+  Printer, RefreshCw, Sparkles, Sun, Sunset, Trash2, Users, Wallet,
 } from 'lucide-react'
 import { tripsAPI } from '../services/api'
 import EditTripPanel from '../components/EditTripPanel'
 import { PACES, VIBES } from '../utils/options'
-import { addDays, formatDate, inr } from '../utils/format'
+import { addDays, daysBetween, formatDate, inr } from '../utils/format'
 
 const SLOT_ICONS = { morning: Sun, afternoon: Sunset, evening: Moon }
 
@@ -75,7 +75,12 @@ export default function TripView() {
   const { trip, itinerary } = data
   const days = itinerary?.days ?? []
   const totalCost = days.reduce((sum, d) => sum + (Number(d.estimated_day_cost) || 0), 0)
-  const vibeLabel = VIBES.find((v) => v.id === trip.travel_style)?.label || trip.travel_style
+  const vibe = VIBES.find((v) => v.id === trip.travel_style)
+  const vibeLabel = vibe?.label || trip.travel_style
+  const coverClass = `cover-${vibe ? vibe.id : 'default'}`
+  const nDays = daysBetween(trip.start_date, trip.end_date)
+  const interests = trip.interests || []
+  const dietary = trip.dietary_restrictions || []
 
   function addFeedback(text) {
     setFeedback((f) => (f ? `${f}. ${text}` : text))
@@ -110,7 +115,6 @@ export default function TripView() {
       setNotice('')
     } catch (err) {
       setRegenError(err.message)
-      setNotice((current) => current)
     } finally {
       setRegenerating(false)
     }
@@ -140,14 +144,21 @@ export default function TripView() {
 
   return (
     <div>
+      {/* ---------- Header ---------- */}
       <div className="card trip-hero">
+        <div className={`hero-band ${coverClass}`} />
         <div className="trip-hero-top">
           <div>
-            <h1>{trip.title}</h1>
-            <p className="meta"><MapPin size={14} /> {trip.destination}</p>
-            <p className="meta">
-              <Calendar size={14} /> {formatDate(trip.start_date)} to {formatDate(trip.end_date)}
-            </p>
+            <div className="hero-title-row">
+              <h1>{trip.title}</h1>
+              {itinerary && <span className="badge badge-primary">Version {itinerary.version}</span>}
+            </div>
+            <div className="meta-row">
+              <p className="meta"><MapPin size={14} /> {trip.destination}</p>
+              <p className="meta">
+                <Calendar size={14} /> {formatDate(trip.start_date)} to {formatDate(trip.end_date)}
+              </p>
+            </div>
           </div>
           <div className="hero-actions no-print">
             <button className="btn btn-ghost" onClick={() => setEditing((e) => !e)}>
@@ -169,18 +180,7 @@ export default function TripView() {
           </div>
         </div>
 
-        <div className="badges">
-          <span className="badge">{vibeLabel}</span>
-          <span className="badge">{trip.pace} pace</span>
-          <span className="badge"><Users size={12} /> {trip.group_size}</span>
-          <span className="badge">{inr(trip.budget_per_day)} / day</span>
-          {itinerary && <span className="badge badge-primary">Version {itinerary.version}</span>}
-        </div>
-
         {itinerary?.summary && <p className="summary">{itinerary.summary}</p>}
-        {itinerary && (
-          <p className="muted">Estimated cost of activities: {inr(totalCost)} per person</p>
-        )}
       </div>
 
       {notice && (
@@ -210,17 +210,22 @@ export default function TripView() {
         />
       )}
 
+      {/* ---------- Refine / regenerate ---------- */}
       <div className="card regen no-print">
-        <button className="btn btn-primary" onClick={() => setShowRegen((s) => !s)}>
-          <RefreshCw size={16} /> {showRegen ? 'Close' : itinerary ? 'Refine or regenerate' : 'Generate itinerary'}
-        </button>
+        <div className="regen-bar">
+          <div>
+            <strong>Want changes?</strong>
+            <p className="muted" style={{ margin: 0 }}>
+              Give feedback or switch the vibe. Each regenerate is saved as a new version.
+            </p>
+          </div>
+          <button className="btn btn-primary" onClick={() => setShowRegen((s) => !s)}>
+            <RefreshCw size={16} /> {showRegen ? 'Close' : itinerary ? 'Refine or regenerate' : 'Generate itinerary'}
+          </button>
+        </div>
 
         {showRegen && (
           <div className="regen-body">
-            <p className="muted">
-              Tell the AI what to change. It keeps what still fits and saves the result as a new
-              version.
-            </p>
             <div className="chip-row">
               {QUICK_FEEDBACK.map((q) => (
                 <button type="button" key={q} className="chip" onClick={() => addFeedback(q)}>
@@ -278,90 +283,182 @@ export default function TripView() {
         )}
       </div>
 
-      {days.length > 0 && (
-        <div className="tabs no-print">
-          {days.map((day, i) => (
-            <button
-              key={day.day}
-              className={`tab ${i === activeDay ? 'active' : ''}`}
-              onClick={() => setActiveDay(i)}
-            >
-              Day {day.day}
-              <small>{formatDate(addDays(trip.start_date, i))}</small>
-            </button>
-          ))}
-        </div>
-      )}
+      {/* ---------- Summary column + days ---------- */}
+      <div className="trip-layout">
+        <aside className="trip-side">
+          <div className="card side-card">
+            <ul className="facts">
+              <li>
+                <div className="fact-icon fi-blue"><Calendar size={18} /></div>
+                <div>
+                  <small>Duration</small>
+                  <strong>{formatDate(trip.start_date)} to {formatDate(trip.end_date)}</strong>
+                  {nDays > 0 && <em>{nDays} day{nDays > 1 ? 's' : ''}</em>}
+                </div>
+              </li>
+              <li>
+                <div className="fact-icon fi-mint"><Users size={18} /></div>
+                <div>
+                  <small>Travelers</small>
+                  <strong>{trip.group_size} {trip.group_size === 1 ? 'traveler' : 'travelers'}</strong>
+                </div>
+              </li>
+              <li>
+                <div className="fact-icon fi-amber"><Sparkles size={18} /></div>
+                <div>
+                  <small>Style &amp; pace</small>
+                  <strong className="cap">{vibeLabel} · {trip.pace} pace</strong>
+                </div>
+              </li>
+              <li>
+                <div className="fact-icon fi-rose"><Wallet size={18} /></div>
+                <div>
+                  <small>Budget</small>
+                  <strong>{inr(trip.budget_per_day)}</strong>
+                  <em>per person per day</em>
+                </div>
+              </li>
+            </ul>
+          </div>
 
-      {days.map((day, i) => (
-        <section
-          key={day.day}
-          className={`day-panel ${i === activeDay ? 'active' : 'inactive'}`}
-        >
-          {day.image_url && (
-            <div className="day-hero">
-              <img src={day.image_url} alt={`${trip.destination}: ${day.theme}`} loading="lazy" />
-              {day.image_credit && (
-                <span className="credit">
-                  Photo by{' '}
-                  <a href={day.image_credit_url} target="_blank" rel="noreferrer">
-                    {day.image_credit}
-                  </a>{' '}
-                  on{' '}
-                  <a
-                    href="https://unsplash.com/?utm_source=tripvibe&utm_medium=referral"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Unsplash
-                  </a>
-                </span>
+          {(interests.length > 0 || dietary.length > 0 || trip.mobility_concerns) && (
+            <div className="card side-card">
+              {interests.length > 0 && (
+                <>
+                  <h4 className="side-title">Core interests</h4>
+                  <div className="tag-row">
+                    {interests.map((item) => (
+                      <span key={item} className="tag">{item}</span>
+                    ))}
+                  </div>
+                </>
+              )}
+              {dietary.length > 0 && (
+                <>
+                  <h4 className="side-title">Dietary needs</h4>
+                  <div className="tag-row">
+                    {dietary.map((item) => (
+                      <span key={item} className="tag">{item}</span>
+                    ))}
+                  </div>
+                </>
+              )}
+              {trip.mobility_concerns && (
+                <>
+                  <h4 className="side-title">Mobility</h4>
+                  <p className="muted small" style={{ margin: 0 }}>{trip.mobility_concerns}</p>
+                </>
               )}
             </div>
           )}
 
-          <div className="day-head">
-            <div>
-              <h2>Day {day.day}: {day.theme}</h2>
-              <p className="muted">{formatDate(addDays(trip.start_date, i))}</p>
+          {itinerary && (
+            <div className="total-card">
+              <span className="total-label">Estimated cost</span>
+              <strong>{inr(totalCost)}</strong>
+              <span className="total-note">
+                Per person, all {days.length} day{days.length > 1 ? 's' : ''}. Activities, food and
+                local transport.
+              </span>
             </div>
-            <div className="day-cost">
-              {inr(day.estimated_day_cost)}
-              <span>per person</span>
-            </div>
-          </div>
+          )}
+        </aside>
 
-          <ol className="timeline">
-            {day.activities.map((a, j) => {
-              const Icon = SLOT_ICONS[a.time_slot] || Clock
-              return (
-                <li key={j} className="activity">
-                  <div className="a-time">
-                    <Icon size={16} />
-                    <strong>{a.start_time}</strong>
-                    <span>{a.time_slot}</span>
+        <div className="trip-main">
+          {days.length > 0 && (
+            <div className="tabs no-print">
+              {days.map((day, i) => (
+                <button
+                  key={day.day}
+                  className={`tab ${i === activeDay ? 'active' : ''}`}
+                  onClick={() => setActiveDay(i)}
+                >
+                  Day {day.day}
+                  <small>{formatDate(addDays(trip.start_date, i))}</small>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {days.map((day, i) => (
+            <section
+              key={day.day}
+              className={`day-panel ${i === activeDay ? 'active' : 'inactive'}`}
+            >
+              {day.image_url && (
+                <div className="day-hero">
+                  <img src={day.image_url} alt={`${trip.destination}: ${day.theme}`} loading="lazy" />
+                  {day.image_credit && (
+                    <span className="credit">
+                      Photo by{' '}
+                      <a href={day.image_credit_url} target="_blank" rel="noreferrer">
+                        {day.image_credit}
+                      </a>{' '}
+                      on{' '}
+                      <a
+                        href="https://unsplash.com/?utm_source=tripvibe&utm_medium=referral"
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Unsplash
+                      </a>
+                    </span>
+                  )}
+                </div>
+              )}
+
+              <div className="day-head">
+                <div className="day-title">
+                  <div className="day-num">{String(day.day).padStart(2, '0')}</div>
+                  <div>
+                    <h2>{day.theme}</h2>
+                    <p className="muted" style={{ margin: 0 }}>
+                      Day {day.day} · {formatDate(addDays(trip.start_date, i))}
+                    </p>
                   </div>
-                  <div className="a-body">
-                    <div className="a-top">
-                      <h3>{a.title}</h3>
-                      <span className="tag">{a.category}</span>
-                    </div>
-                    <p>{a.description}</p>
-                    <div className="a-meta">
-                      <span><MapPin size={13} /> {a.area}</span>
-                      <span><Clock size={13} /> {a.duration_minutes} min</span>
-                      <span>{inr(a.estimated_cost)}</span>
-                      {a.travel_time_minutes > 0 && (
-                        <span><Navigation size={13} /> {a.travel_time_minutes} min travel</span>
-                      )}
-                    </div>
-                  </div>
-                </li>
-              )
-            })}
-          </ol>
-        </section>
-      ))}
+                </div>
+                <div className="day-cost">
+                  {inr(day.estimated_day_cost)}
+                  <span>per person</span>
+                  <span>of {inr(trip.budget_per_day)} daily budget</span>
+                </div>
+              </div>
+
+              <ol className="timeline">
+                {day.activities.map((a, j) => {
+                  const Icon = SLOT_ICONS[a.time_slot] || Clock
+                  return (
+                    <li key={j} className="activity">
+                      <div className="a-time">
+                        <div className={`slot-bubble slot-${a.time_slot}`}>
+                          <Icon size={18} />
+                        </div>
+                        <strong>{a.start_time}</strong>
+                        <span>{a.time_slot}</span>
+                      </div>
+                      <div className="a-body">
+                        <div className="a-top">
+                          <h3>{a.title}</h3>
+                          <span className="tag">{a.category}</span>
+                        </div>
+                        <p>{a.description}</p>
+                        <div className="a-meta">
+                          <span><MapPin size={13} /> {a.area}</span>
+                          <span><Clock size={13} /> {a.duration_minutes} min</span>
+                          <span>{inr(a.estimated_cost)}</span>
+                          {a.travel_time_minutes > 0 && (
+                            <span><Navigation size={13} /> {a.travel_time_minutes} min travel</span>
+                          )}
+                        </div>
+                      </div>
+                    </li>
+                  )
+                })}
+              </ol>
+            </section>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }

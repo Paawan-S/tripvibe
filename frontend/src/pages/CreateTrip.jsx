@@ -1,12 +1,20 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft, ArrowRight, Check, Loader, Sparkles } from 'lucide-react'
+import {
+  ArrowLeft, ArrowRight, Calendar, Check, Loader, MapPin, Sparkles, Users, Wallet,
+} from 'lucide-react'
 import { tripsAPI } from '../services/api'
 import { DIETARY, INTERESTS, PACES, VIBES } from '../utils/options'
 import { daysBetween, inr } from '../utils/format'
 
 const STEPS = ['Your vibe', 'Where & when', 'Final details']
+
+const STEP_INFO = [
+  { title: 'What kind of trip?', sub: 'Pick a vibe, pace and budget. The AI plans around them.' },
+  { title: 'Where and when', sub: 'Choose a destination, or let TripVibe suggest one.' },
+  { title: 'Final touches', sub: 'Anything the plan should respect? Then generate.' },
+]
 
 const LOADING_MESSAGES = [
   'Finding the best spots…',
@@ -151,6 +159,7 @@ export default function CreateTrip() {
     <div className="create-wrap">
       <div className="page-header">
         <div>
+          <span className="eyebrow">New trip</span>
           <h1>Plan a new trip</h1>
           <p className="muted">Answer a few questions and the AI builds your day-by-day plan.</p>
         </div>
@@ -162,7 +171,7 @@ export default function CreateTrip() {
             key={label}
             className={`step ${i === step ? 'current' : ''} ${i < step ? 'done' : ''}`}
           >
-            <span className="step-dot">{i < step ? <Check size={14} /> : i + 1}</span>
+            <span className="step-dot">{i < step ? <Check size={16} /> : i + 1}</span>
             <span>{label}</span>
           </div>
         ))}
@@ -177,6 +186,11 @@ export default function CreateTrip() {
             exit={{ opacity: 0, x: -24 }}
             transition={{ duration: 0.2 }}
           >
+            <div className="step-head">
+              <h2>{STEP_INFO[step].title}</h2>
+              <p className="muted">{STEP_INFO[step].sub}</p>
+            </div>
+
             {step === 0 && (
               <div>
                 <p className="section-title">Travel vibe</p>
@@ -190,7 +204,9 @@ export default function CreateTrip() {
                         className={`vibe-card ${form.travel_style === v.id ? 'active' : ''}`}
                         onClick={() => update('travel_style', v.id)}
                       >
-                        <Icon size={20} />
+                        <span className="vibe-icon">
+                          <Icon size={20} />
+                        </span>
                         <strong>{v.label}</strong>
                         <span>{v.hint}</span>
                       </button>
@@ -228,14 +244,17 @@ export default function CreateTrip() {
 
                 <div className="field">
                   <label htmlFor="budget">Budget per person per day (₹)</label>
-                  <input
-                    id="budget"
-                    type="number"
-                    min="1"
-                    step="100"
-                    value={form.budget_per_day}
-                    onChange={(e) => update('budget_per_day', e.target.value)}
-                  />
+                  <div className="input-icon">
+                    <Wallet size={18} />
+                    <input
+                      id="budget"
+                      type="number"
+                      min="1"
+                      step="100"
+                      value={form.budget_per_day}
+                      onChange={(e) => update('budget_per_day', e.target.value)}
+                    />
+                  </div>
                 </div>
               </div>
             )}
@@ -245,12 +264,15 @@ export default function CreateTrip() {
                 <div className="field">
                   <label htmlFor="destination">Destination</label>
                   <div className="input-row">
-                    <input
-                      id="destination"
-                      placeholder="e.g. Goa, Jaipur, Bali"
-                      value={form.destination}
-                      onChange={(e) => update('destination', e.target.value)}
-                    />
+                    <div className="input-icon">
+                      <MapPin size={18} />
+                      <input
+                        id="destination"
+                        placeholder="e.g. Goa, Jaipur, Bali"
+                        value={form.destination}
+                        onChange={(e) => update('destination', e.target.value)}
+                      />
+                    </div>
                     <button
                       type="button"
                       className="btn btn-ghost"
@@ -297,23 +319,29 @@ export default function CreateTrip() {
                 <div className="grid-2">
                   <div className="field">
                     <label htmlFor="start">Start date</label>
-                    <input
-                      id="start"
-                      type="date"
-                      min={today}
-                      value={form.start_date}
-                      onChange={(e) => update('start_date', e.target.value)}
-                    />
+                    <div className="input-icon">
+                      <Calendar size={18} />
+                      <input
+                        id="start"
+                        type="date"
+                        min={today}
+                        value={form.start_date}
+                        onChange={(e) => update('start_date', e.target.value)}
+                      />
+                    </div>
                   </div>
                   <div className="field">
                     <label htmlFor="end">End date</label>
-                    <input
-                      id="end"
-                      type="date"
-                      min={form.start_date || today}
-                      value={form.end_date}
-                      onChange={(e) => update('end_date', e.target.value)}
-                    />
+                    <div className="input-icon">
+                      <Calendar size={18} />
+                      <input
+                        id="end"
+                        type="date"
+                        min={form.start_date || today}
+                        value={form.end_date}
+                        onChange={(e) => update('end_date', e.target.value)}
+                      />
+                    </div>
                   </div>
                 </div>
                 {days > 0 && (
@@ -324,14 +352,17 @@ export default function CreateTrip() {
 
                 <div className="field">
                   <label htmlFor="group">Number of travelers</label>
-                  <input
-                    id="group"
-                    type="number"
-                    min="1"
-                    max="20"
-                    value={form.group_size}
-                    onChange={(e) => update('group_size', e.target.value)}
-                  />
+                  <div className="input-icon">
+                    <Users size={18} />
+                    <input
+                      id="group"
+                      type="number"
+                      min="1"
+                      max="20"
+                      value={form.group_size}
+                      onChange={(e) => update('group_size', e.target.value)}
+                    />
+                  </div>
                 </div>
               </div>
             )}
@@ -375,6 +406,7 @@ export default function CreateTrip() {
                 </div>
 
                 <div className="review">
+                  <p className="review-title">Your trip at a glance</p>
                   <p>
                     <strong>{form.destination || '-'}</strong> · {days || '?'} day{days === 1 ? '' : 's'} ·{' '}
                     {form.group_size} traveler(s)
@@ -416,9 +448,11 @@ export default function CreateTrip() {
 
       {generating && (
         <div className="overlay">
-          <div>
-            <Loader size={40} className="spin" />
-            <h2 style={{ marginTop: 16 }}>Planning your trip…</h2>
+          <div className="overlay-card">
+            <div className="spin-ring">
+              <Loader size={34} className="spin" />
+            </div>
+            <h2>Planning your trip…</h2>
             <p className="muted">{LOADING_MESSAGES[msgIndex]}</p>
             <p className="muted small">
               This usually takes 10 to 30 seconds. If the server was asleep, the first try can take
