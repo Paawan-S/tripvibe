@@ -110,3 +110,18 @@ class DestinationSuggestion(BaseModel):
 
 class RecommendResponse(BaseModel):
     destinations: List[DestinationSuggestion]
+
+class UpdateTripRequest(BaseModel):
+    """Every field is optional: the user sends only what they want to change."""
+
+    title: Optional[str] = Field(None, max_length=120)
+    destination: Optional[str] = Field(None, min_length=2, max_length=120)
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+    travel_style: Optional[str] = None
+    interests: Optional[List[str]] = None
+    group_size: Optional[int] = Field(None, ge=1, le=20)
+    pace: Optional[Literal["relaxed", "moderate", "fast"]] = None
+    budget_per_day: Optional[float] = Field(None, gt=0)
+    dietary_restrictions: Optional[List[str]] = None
+    mobility_concerns: Optional[str] = None

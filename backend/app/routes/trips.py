@@ -1,6 +1,7 @@
 """Trip and itinerary routes."""
 
 import logging
+from datetime import date
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, status
@@ -13,6 +14,7 @@ from app.schemas.schemas import (
     RegenerateRequest,
     TripDetailResponse,
     TripResponse,
+    UpdateTripRequest,
 )
 from app.services.ai import get_ai_orchestrator
 from app.services.history import get_history_service
@@ -23,10 +25,14 @@ from app.services.trip import (
     itinerary_to_response,
 )
 from app.utils.auth import get_current_user_id
+from app.utils.errors import ValidationError
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/trips", tags=["Trips"])
+
+# These two columns may be cleared (set to null). Every other field must keep a value.
+NULLABLE_FIELDS = {"dietary_restrictions", "mobility_concerns"}
 
 
 def _prompt_from_trip(
@@ -113,6 +119,56 @@ async def get_trip(trip_id: str, user_id: str = Depends(get_current_user_id)):
         trip=TripResponse(**trip),
         itinerary=itinerary_to_response(latest) if latest else None,
     )
+
+
+@router.patch("/{trip_id}", response_model=TripResponse)
+async def update_trip(
+    trip_id: str,
+    data: UpdateTripRequest,
+    user_id: str = Depends(get_current_user_id),
+):
+    """Activity 5.1: edit a trip's details. Send only the fields that changed."""
+    trips = get_trip_service()
+    existing = trips.get_trip(trip_id, user_id)  # 404 if missing or not theirs
+
+    # exclude_unset keeps only fields the user actually sent. We also drop explicit
+    # nulls, except for the two columns that are allowed to be cleared.
+    changes = {
+        key: value
+        for key, value in data.model_dump(exclude_unset=True, mode="json").items()
+        if value is not None or key in NULLABLE_FIELDS
+    }
+
+    if "title" in changes:
+        changes["title"] = changes["title"].strip()
+        if not changes["title"]:
+            raise ValidationError("Trip name cannot be empty")
+    if "destination" in changes:
+        changes["destination"] = changes["destination"].strip()
+        if len(changes["destination"]) < 2:
+            raise ValidationError("Destination is too short")
+
+    if not changes:
+        return TripResponse(**existing)
+
+    # The new end date must be checked against the old start date (and vice versa)
+    start_raw = changes.get("start_date", existing.get("start_date"))
+    end_raw = changes.get("end_date", existing.get("end_date"))
+    if start_raw and end_raw:
+        start = date.fromisoformat(str(start_raw)[:10])
+        end = date.fromisoformat(str(end_raw)[:10])
+        if end < start:
+            raise ValidationError("The end date must be on or after the start date")
+        if (end - start).days > 9:
+            raise ValidationError("Trips can be at most 10 days")
+
+    updated = trips.update_trip(existing["id"], user_id, changes)
+    get_history_service().log(
+        user_id,
+        "trip_updated",
+        {"trip_id": existing["id"], "fields": sorted(changes.keys())},
+    )
+    return TripResponse(**updated)
 
 
 @router.post("/{trip_id}/regenerate", response_model=TripDetailResponse)

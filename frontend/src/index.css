@@ -203,3 +203,8 @@ a { color: inherit; text-decoration: none; }
   .day-panel { break-inside: avoid-page; margin-bottom: 18px; }
   .day-hero { height: 180px; }
 }
+
+/* ---------- Edit trip ---------- */
+.edit-panel { margin-top: 16px; }
+.notice { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
+.edit-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }

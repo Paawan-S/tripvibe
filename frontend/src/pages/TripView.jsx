@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
-  Calendar, Check, Clock, Copy, Loader, MapPin, Moon,
-  Navigation, Printer, RefreshCw, Sun, Sunset, Trash2, Users,
+  Calendar, Check, Clock, Copy, Loader, MapPin, Moon, Navigation,
+  Pencil, Printer, RefreshCw, Sun, Sunset, Trash2, Users,
 } from 'lucide-react'
 import { tripsAPI } from '../services/api'
+import EditTripPanel from '../components/EditTripPanel'
 import { PACES, VIBES } from '../utils/options'
 import { addDays, formatDate, inr } from '../utils/format'
 
@@ -46,6 +47,9 @@ export default function TripView() {
   const [regenerating, setRegenerating] = useState(false)
   const [regenError, setRegenError] = useState('')
 
+  const [editing, setEditing] = useState(false)
+  const [notice, setNotice] = useState('')
+
   const [copied, setCopied] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
@@ -77,6 +81,16 @@ export default function TripView() {
     setFeedback((f) => (f ? `${f}. ${text}` : text))
   }
 
+  function handleSaved(updatedTrip, affectsPlan) {
+    setData((current) => ({ ...current, trip: updatedTrip }))
+    setEditing(false)
+    setNotice(
+      affectsPlan
+        ? 'Details saved. The itinerary below still shows the old plan, so regenerate it to match your changes.'
+        : 'Trip name saved.',
+    )
+  }
+
   async function handleRegenerate() {
     setRegenerating(true)
     setRegenError('')
@@ -93,8 +107,10 @@ export default function TripView() {
       setFeedback('')
       setNewStyle('')
       setNewPace('')
+      setNotice('')
     } catch (err) {
       setRegenError(err.message)
+      setNotice((current) => current)
     } finally {
       setRegenerating(false)
     }
@@ -134,6 +150,9 @@ export default function TripView() {
             </p>
           </div>
           <div className="hero-actions no-print">
+            <button className="btn btn-ghost" onClick={() => setEditing((e) => !e)}>
+              <Pencil size={16} /> {editing ? 'Close editor' : 'Edit details'}
+            </button>
             {itinerary && (
               <>
                 <button className="btn btn-ghost" onClick={handleCopy}>
@@ -163,6 +182,33 @@ export default function TripView() {
           <p className="muted">Estimated cost of activities: {inr(totalCost)} per person</p>
         )}
       </div>
+
+      {notice && (
+        <div className="info-box notice no-print">
+          <span>{notice}</span>
+          {notice.includes('regenerate') && (
+            <button className="btn btn-primary" onClick={handleRegenerate} disabled={regenerating}>
+              {regenerating ? (
+                <>
+                  <Loader size={16} className="spin" /> Regenerating…
+                </>
+              ) : (
+                <>
+                  <RefreshCw size={16} /> Regenerate now
+                </>
+              )}
+            </button>
+          )}
+        </div>
+      )}
+
+      {editing && (
+        <EditTripPanel
+          trip={trip}
+          onSaved={handleSaved}
+          onCancel={() => setEditing(false)}
+        />
+      )}
 
       <div className="card regen no-print">
         <button className="btn btn-primary" onClick={() => setShowRegen((s) => !s)}>

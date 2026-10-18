@@ -39,6 +39,8 @@ export const tripsAPI = {
   create: (data) => request('/trips', { method: 'POST', body: JSON.stringify(data) }),
   list: () => request('/trips'),
   get: (id) => request(`/trips/${id}`),
+  update: (id, data) =>
+    request(`/trips/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   regenerate: (id, data) =>
     request(`/trips/${id}/regenerate`, { method: 'POST', body: JSON.stringify(data) }),
   remove: (id) => request(`/trips/${id}`, { method: 'DELETE' }),
