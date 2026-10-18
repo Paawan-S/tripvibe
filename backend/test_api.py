@@ -1,4 +1,5 @@
 import getpass
+import os
 import sys
 
 import httpx
@@ -6,7 +7,7 @@ from supabase import create_client
 
 from app.config import get_settings
 
-BASE = "http://localhost:8000"
+BASE = os.getenv("API_URL", "http://localhost:8000")
 
 
 def check(response):
@@ -29,6 +30,7 @@ def main():
     ).session
     headers = {"Authorization": f"Bearer {session.access_token}"}
     print("Logged in OK")
+    print("Testing against:", BASE)
 
     with httpx.Client(base_url=BASE, headers=headers, timeout=180) as c:
         print("\n1) Create a trip (calls the AI, wait a few seconds)")
